@@ -17,6 +17,8 @@ function 만들기(태그, 클래스, 글, 속성 = {}) {
   return 요소;
 }
 
+const 긴열 = new Set(["상호", "출처", "이름", "메모"]); // 길어질 수 있어 …로 줄이는 열
+
 // 셀은 문자열이거나 [글, 클래스]. 숫자 열은 머리 이름 뒤에 '#'을 붙여 표시한다.
 function 표(머리, 행들, 빈문구 = "내역이 없습니다.", 행클래스 = () => "") {
   if (!행들.length) return 만들기("p", "빈문구", 빈문구);
@@ -29,12 +31,14 @@ function 표(머리, 행들, 빈문구 = "내역이 없습니다.", 행클래스
     const 줄 = 만들기("tr", 행클래스(번호));
     행.forEach((셀, i) => {
       const [글, 클래스] = Array.isArray(셀) ? 셀 : [셀, ""];
-      const 이름 = 머리[i].replace("#", "");
-      줄.append(만들기("td", [머리[i].endsWith("#") ? "금액" : "", 클래스].join(" ").trim(), 글, { "data-label": 이름 }));
+      const 긴 = 긴열.has(머리[i]);
+      줄.append(만들기("td", [머리[i].endsWith("#") ? "금액" : "", 클래스, 긴 ? "긴글" : ""].join(" ").trim(), 글, 긴 && 글 ? { title: 글 } : {}));
     });
     tbody.append(줄);
   }
-  return 표요소;
+  const 틀 = 만들기("div", "표틀");
+  틀.append(표요소);
+  return 틀;
 }
 
 const 카드 = (라벨, 값, 음수 = false, 주요 = false) => {
@@ -79,8 +83,9 @@ function 월탭(d, 내용) {
   const 나쁜 = 목록밖카테고리(d.지출, 상태.월, d.카테고리);
   if (나쁜.length) 알림추가(`카테고리 확인 필요: ${나쁜.map(r => `${r.날짜} ${r.이름}(${r.분류 || "비어 있음"})`).join(", ")}`);
 
-  const 이번 = d.지출.filter(r => r.날짜.startsWith(상태.월)).sort((a, b) => a.날짜.localeCompare(b.날짜));
-  // 월은 위에 보이므로 일만 쓰고, 같은 날은 첫 줄에만 적어 진한 선으로 묶는다.
+  // 최근 날짜부터. 같은 날은 나중에 적힌 거래가 위로 온다.
+  const 이번 = d.지출.filter(r => r.날짜.startsWith(상태.월)).reverse().sort((a, b) => b.날짜.localeCompare(a.날짜));
+  // 월은 위에 보이므로 일만 쓰고, 같은 날은 첫 줄에만 적어 선으로 묶는다.
   const 새날 = i => i === 0 || 이번[i].날짜 !== 이번[i - 1].날짜;
   내용.append(만들기("h2", "", "지출 (날짜별)"),
     표(["일", "상호", "금액#", "카테고리", "메모"], 이번.map((r, i) => [새날(i) ? `${Number(r.날짜.slice(8))}일` : "", r.이름, 원(r.금액), r.분류, r.메모]),
@@ -193,7 +198,7 @@ async function 불러오기() {
 }
 
 function 연탭(d, 내용) {
-  const 줄 = 연간(d.지출, d.입금, 상태.연);
+  const 줄 = 연간(d.지출, d.입금, 상태.연).reverse(); // 최근 달부터
   내용.append(만들기("h2", "", `${상태.연}년 월별`),
     표(["월", "지출#", "차액#", "포인트#", "입금#"], 줄.map(r => [r.월, 원(r.지출), [원(r.차액), 부호(r.차액)], 원(r.포인트), 원(r.현금입금)]), "이 해의 내역이 없습니다."));
 }
@@ -276,6 +281,7 @@ async function 시작() {
   document.getElementById("다음").addEventListener("click", () => 이동(1));
   메모폼준비();
   연결준비();
+  $("내용").addEventListener("click", e => e.target.closest("td.긴글")?.classList.toggle("펼침"));
   // 다른 앱에 갔다가 돌아오면 다시 읽는다(그사이 Muse가 넣은 거래가 보이게).
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && 상태.데이터) 불러오기(); });
 

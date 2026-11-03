@@ -117,13 +117,16 @@ th:last-child, td:last-child { padding-right: 0; }
   nav button { display: flex; gap: 6px; flex: none; font-size: 18px; padding: 8px 0; }
   nav .번호 { font-size: 13px; }
 }
+/* 거래 하나는 언제나 한 줄. 긴 이름·메모는 …로 줄이고 누르면 펼친다. 열이 많은 표는 표 안에서만 옆으로 민다. */
+.표틀 { overflow-x: auto; }
+th, td { white-space: nowrap; }
+td.긴글 { max-width: 16em; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+td.긴글.펼침 { max-width: none; white-space: normal; }
 @media (max-width: 640px) {
-  table, tbody, tr, td { display: block; }
-  thead { display: none; }
-  tr { padding: 10px 0; border-bottom: 1px solid var(--선); }
-  td { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; border: 0; text-align: right; }
-  td::before { content: attr(data-label); flex: none; font-size: 13px; text-align: left; color: var(--흐림); }
-  td:empty { display: none; }
+  th { padding: 6px 8px 6px 0; font-size: 11px; }
+  td { padding: 9px 8px 9px 0; font-size: 14px; }
+  td.긴글 { max-width: 6.5em; }
+  td.긴글.펼침 { max-width: 12em; }
   .카드 strong { font-size: 22px; }
   .카드.주요 strong { font-size: 36px; }
 }
