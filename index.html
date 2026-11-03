@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; img-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'">
+<title>가계부</title>
+<link rel="stylesheet" href="./스타일.css">
+</head>
+<body>
+<div id="유령위" class="유령 위" aria-hidden="true"></div>
+<div id="유령아래" class="유령 아래" aria-hidden="true"></div>
+
+<section id="연결" class="연결" hidden>
+  <h1>가계부</h1>
+  <p class="설명">GitHub 토큰을 한 번 넣어 두면 이 기기에서 바로 열립니다. 토큰은 이 기기 브라우저에만 저장됩니다.</p>
+  <form id="연결폼">
+    <label class="메모대상" for="토큰입력">GitHub 토큰</label>
+    <input id="토큰입력" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+    <button class="주" type="submit">연결</button>
+  </form>
+  <p id="연결안내" class="폼상태" role="status"></p>
+</section>
+
+<div id="앱" class="틀" hidden>
+  <aside>
+    <div class="제목줄">
+      <h1>가계부</h1>
+      <button id="메모추가" class="더하기" type="button" aria-label="메모 추가" aria-expanded="false" aria-controls="메모폼">+</button>
+    </div>
+    <form id="메모폼" class="메모폼" hidden>
+      <label id="메모대상" class="메모대상" for="메모입력"></label>
+      <textarea id="메모입력" rows="2" maxlength="500" placeholder="메모를 적어 주세요"></textarea>
+      <div class="버튼줄">
+        <button id="메모취소" type="button">취소</button>
+        <button id="메모저장" class="주" type="submit">저장</button>
+      </div>
+    </form>
+    <p id="메모안내" class="폼상태" role="status"></p>
+    <p class="설명">입금과 지출을 날짜별로 한눈에 봅니다.</p>
+    <div id="기간" class="기간">
+      <button id="이전" type="button" aria-label="이전">‹</button>
+      <strong id="기간표시"></strong>
+      <button id="다음" type="button" aria-label="다음">›</button>
+    </div>
+    <nav id="탭" role="tablist" aria-label="보기"></nav>
+    <button id="연결해제" class="연결해제" type="button">이 기기 연결 해제</button>
+  </aside>
+  <section>
+    <div id="알림" role="status"></div>
+    <main id="내용"></main>
+  </section>
+</div>
+<script type="module" src="./화면.js"></script>
+</body>
+</html>
