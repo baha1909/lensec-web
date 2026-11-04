@@ -49,21 +49,21 @@ export function 카테고리목록(text) {
   return String(text || "").split(/\r?\n/).map(l => (l.match(/^- ([^:\s]+):/) || [])[1]).filter(Boolean);
 }
 
-function 항목읽기(text, 기준열, 숫자열, 경고) {
+function 항목읽기(text, 기준열, 숫자열, 경고, 종료포함) {
   const 표 = 표읽기(text).find(t => t.머리.includes(기준열));
   if (!표) return [];
   return 표.행.filter(행 => 행[0]).map(행 => {
     const 항목 = 객체행(표, 행);
     for (const 이름 of 숫자열) 항목[이름] = 금액읽기(항목[이름], 경고, `${항목.이름} ${이름}`);
     return 항목;
-  }).filter(항목 => 항목.상태 !== "종료");
+  }).filter(항목 => 종료포함 || 항목.상태 !== "종료");
 }
 
-export const 고정지출읽기 = (text, 경고 = []) =>
-  항목읽기(text, "주기", ["금액"], 경고).sort((a, b) => (Number(a.결제일) || 0) - (Number(b.결제일) || 0));
+export const 고정지출읽기 = (text, 경고 = [], 종료포함 = false) =>
+  항목읽기(text, "주기", ["금액"], 경고, 종료포함).sort((a, b) => (Number(a.결제일) || 0) - (Number(b.결제일) || 0));
 
-export const 대출읽기 = (text, 경고 = []) =>
-  항목읽기(text, "잔액", ["잔액", "금리", "월상환액"], 경고).sort((a, b) => a.만기일.localeCompare(b.만기일));
+export const 대출읽기 = (text, 경고 = [], 종료포함 = false) =>
+  항목읽기(text, "잔액", ["잔액", "금리", "월상환액"], 경고, 종료포함).sort((a, b) => a.만기일.localeCompare(b.만기일));
 
 const 합 = rs => rs.reduce((s, r) => s + r.금액, 0);
 const 이달 = (rs, 월) => rs.filter(r => r.날짜.startsWith(월));
@@ -120,10 +120,31 @@ export function 고정지출요약(항목들) {
   };
 }
 
+// 유형별 월 환산 합계. 정해 둔 순서대로, 목록에 없는 유형은 뒤에 붙인다.
+export const 유형순서 = ["구독", "보험", "통신비", "저축", "기타"];
+export function 유형별(항목들) {
+  const 맵 = new Map();
+  for (const it of 항목들) 맵.set(it.유형 || "기타", (맵.get(it.유형 || "기타") || 0) + it.금액 / (it.주기 === "연" ? 12 : 1));
+  const 순위 = 유형 => (유형순서.includes(유형) ? 유형순서.indexOf(유형) : 유형순서.length);
+  return [...맵].sort((a, b) => 순위(a[0]) - 순위(b[0]));
+}
+
 export const 대출요약 = 항목들 => ({
   잔액합계: 항목들.reduce((s, it) => s + it.잔액, 0),
   월상환합계: 항목들.reduce((s, it) => s + it.월상환액, 0),
 });
+
+// 달마다 그때 내던 고정 지출·대출 상환. 시작일~만기일 사이 달만 센다(비어 있으면 끝없이).
+// 종료된 줄은 만기일까지만 센다. 만기일 없이 종료된 줄은 언제 끝났는지 몰라 세지 않는다.
+export function 고정월별(고정, 대출, 달들) {
+  const 그달 = (it, 월) => (!it.시작일 || it.시작일.slice(0, 7) <= 월) && (!it.만기일 || it.만기일.slice(0, 7) >= 월)
+    && (it.상태 !== "종료" || !!it.만기일);
+  return 달들.map(월 => {
+    const 고 = 고정지출요약(고정.filter(it => 그달(it, 월)));
+    const 상환 = 대출.filter(it => 그달(it, 월)).reduce((s, it) => s + it.월상환액, 0);
+    return { 월, ...고, 상환, 합계: 고.지출성 + 고.저축 + 상환 };
+  });
+}
 
 export const 원 = n => `${Math.round(n).toLocaleString("ko-KR")}원`;
 
